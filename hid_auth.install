@@ -1,0 +1,16 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function hid_auth_install() {
+  // Create the Email field for OAuthconnector to allow syncing the user's
+  // email address from the Oauth provider.
+  drupal_load('module', 'oauthconnector');
+  oauthconnector_fields_save('email', array('title' => t('Email'), 'description' => '', 'required' => 0));
+
+  // Ensure users are able to register and not required to use an email
+  // verification link.
+  variable_set('user_register', '1');
+  variable_set('user_email_verification', '0');
+}

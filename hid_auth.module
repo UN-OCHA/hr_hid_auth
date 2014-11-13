@@ -1,0 +1,106 @@
+<?php
+/**
+ * @file
+ * Code for the Humanitarian ID Auth Integration feature.
+ */
+
+include_once 'hid_auth.features.inc';
+
+/**
+ * Implements hook_menu_alter().
+ */
+function hid_auth_menu_alter(&$items) {
+  // Disable the user registration page for all users.
+  $items['user/register']['access callback'] = FALSE;
+}
+
+/**
+ * Implements hook_user_logout().
+ *
+ * When a user logs out, redirect them to the logout page on the authentication
+ * server to ensure that session is destroyed.
+ *
+ * The only method to alter the redirect to the front page is to set a global
+ * variable that can be checked in hook_drupal_goto_alter().
+ */
+function hid_auth_user_logout($account) {
+  $GLOBALS['hid_auth_user_logout'] = 1;
+}
+
+/**
+ * Implements hook_drupal_goto_alter().
+ *
+ * When the hid_auth_user_logout global variable is set, redirect users
+ * to the authentication server's logout page.
+ */
+function hid_auth_drupal_goto_alter(&$path, $options, $http_response_code) {
+  if (!empty($GLOBALS['hid_auth_user_logout'])) {
+    $path = hid_auth_get_base_url() . '/logout?redirect=' . url('<front>', array('absolute' => TRUE));
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * For users with an Oauthconnector connection, disable the email field, hide
+ * the password fields, and add a link to the profile management page on the
+ * authentication server.
+ */
+function hid_auth_form_user_profile_form_alter(&$form, &$form_state) {
+  // Check if the user has a Connector module account.
+  $uid = !empty($form['#user']->uid) ? $form['#user']->uid : FALSE;
+  $authname = $uid ? db_query("SELECT authname FROM {authmap} WHERE module = 'connector' AND uid = :uid", array(':uid' => $uid))->fetchField() : FALSE;
+  if ($authname) {
+    // Make the email field readonly
+    $form['account']['mail']['#disabled'] = TRUE;
+    $form['account']['mail']['#weight'] = -4;
+
+    // Hide and disable the username field
+    $form['account']['name']['#type'] = 'value';
+
+    // Hide and disable password fields
+    $form['account']['current_pass']['#type'] = 'value';
+    $form['account']['pass']['#type'] = 'value';
+
+    // Add a link to the authentication server's account update page.
+    $form['account']['auth_link'] = array(
+      '#type' => 'item',
+      '#title' => t('Change your email address or password'),
+      '#markup' => t('Click !here to update your email address and password for Humanitarian ID Sign In applications.', array('!here' => l(t('here'), hid_auth_get_base_url() . '/account', array('query' => array('redirect_uri' => url(current_path(), array('absolute' => TRUE))))))),
+      '#weight' => -5,
+    );
+  }
+}
+
+/**
+ * Helper function to lookup the base URL for the Humanitarian ID auth system.
+ */
+function hid_auth_get_base_url() {
+  $connector = _connector_get_connectors('oauthconnector_hid_oauth');
+  return !empty($connector['oauthconnector provider']->url) ? $connector['oauthconnector provider']->url : '';
+}
+
+/**
+ * Helper function to lookup the Humanitarian ID auth system ID for a Drupal user.
+ */
+function hid_auth_get_user_id($account = NULL) {
+  if (empty($account)) {
+    global $user;
+    $account = $user;
+  }
+
+  $connectors = _connector_get_connectors();
+  $connections = _connector_get_user_connections($account);
+
+  // Find the connection using the "oauthconnector_hid_oauth" connector,
+  // and return the related cid.
+  foreach ($connections as $connection) {
+    if (array_key_exists($connection->connector, $connectors)) {
+      $connector = $connectors[$connection->connector];
+      if (!empty($connection->connector) && $connection->connector === 'oauthconnector_hid_oauth' && !empty($connection->cid)) {
+        return $connection->cid;
+      }
+    }
+  }
+  return FALSE;
+}
