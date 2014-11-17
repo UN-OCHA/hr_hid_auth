@@ -104,3 +104,65 @@ function hid_auth_get_user_id($account = NULL) {
   }
   return FALSE;
 }
+
+/**
+ * Helper function to register a user with a given email address, and optional
+ * first and last name.
+ */
+function hid_auth_register_user($email, $name_first = '', $name_last = '') {
+  $data = array(
+    'email' => $email,
+    'nameFirst' => $name_first,
+    'nameLast' => $name_last,
+  );
+  $response = hid_auth_api_post('api/register', $data);
+  if (!empty($response->code) && $response->code == 200 && !empty($response->data)) {
+    $response_data = drupal_json_decode($response->data);
+    if (!empty($response_data['status']) && $response_data['status'] == 'ok') {
+      if (!empty($response_data['data']['user_id']) && isset($response_data['data']['is_new'])) {
+        watchdog('hid_auth', 'User %user_id registered with email %email (@nameFirst @nameLast)', array('%user_id' => $response_data['response']['data']['user_id'], '%email' => $email, '@nameFirst' => $name_first, '@nameLast' => $name_last));
+        return $response_data['data'];
+      }
+    }
+    watchdog('hid_auth', 'API error when attempting to register user with email %email (@nameFirst @nameLast)', array('%email' => $email, '@nameFirst' => $name_first, '@nameLast' => $name_last));
+    return FALSE;
+  }
+  else {
+    watchdog('hid_auth', 'API error when attempting to register user. Received: <pre>@response</pre>', array('@response' => var_dump($response)));
+    return FALSE;
+  }
+}
+
+/**
+ * Helper function for making a POST request to the HID Authentication API.
+ */
+function hid_auth_api_post($resource_path, $data = array()) {
+  $connector = _connector_get_connectors('oauthconnector_hid_oauth');
+  $base_url = !empty($connector['oauthconnector provider']->url) ? $connector['oauthconnector provider']->url : '';
+  $csid = !empty($connector['oauthconnector provider']->csid) ? $connector['oauthconnector provider']->csid : FALSE;
+  $consumer = !empty($csid) ? oauth_common_consumer_load($csid) : FALSE;
+  $key = !empty($consumer->key) ? $consumer->key : '';
+  $secret = !empty($consumer->secret) ? $consumer->secret : '';
+
+  if (empty($base_url) || empty($key) || empty($secret)) {
+    watchdog('contactsid_profiles', 'Attempted to make a POST request to the Contacts ID Profiles API, but the API endpoint, key, or secret is not set.');
+    return;
+  }
+
+  $values_string = NULL;
+
+  $it = new RecursiveIteratorIterator(new RecursiveArrayIterator($data));
+  foreach($it as $v) {
+    $values_string .= $v;
+  }
+
+  $key_hash = hash('sha256', $values_string . $secret);
+  $data['client_key'] = $key;
+  $data['access_key'] = $key_hash;
+
+  $variables = array();
+  $variables['data'] = $data;
+  $variables['endpoint'] = $base_url;
+
+  return restclient_post($resource_path, $variables);
+}

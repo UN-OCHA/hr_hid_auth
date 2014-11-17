@@ -7,6 +7,7 @@ dependencies[] = connector
 dependencies[] = ctools
 dependencies[] = features
 dependencies[] = oauthconnector
+dependencies[] = restclient
 features[ctools][] = oauthconnector:oauthconnector:1
 features[features_api][] = api:2
 features[oauthconnector_provider][] = hid_oauth
