@@ -20,3 +20,11 @@ API endpoints, key, and secret at:
 3. Ensure the "Connect with Humanitarian ID Oauth" permission under the
 "Connector" group of permissions is enabled for *anonymous* users at:
 `/admin/people/permissions`
+
+## User Migration Drush Command
+
+The Drush command `hid-auth-migrate-users` migrates Drupal users to the Auth
+system by ensuring a user is registered with the Drupal user's email address,
+and then links the Auth system user to the Drupal user. This allows users to
+reset their password on the Auth system, and then be able to access their
+existing account on the Drupal site.
