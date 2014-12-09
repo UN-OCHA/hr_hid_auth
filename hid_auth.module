@@ -11,7 +11,10 @@ include_once 'hid_auth.features.inc';
  */
 function hid_auth_menu_alter(&$items) {
   // Disable the user registration page for all users.
-  $items['user/register']['access callback'] = FALSE;
+  $items['user/register']['access callback'] = 'hid_auth_user_register_access';
+
+  // Disable the user registration page for all users.
+  $items['user/password']['page callback'] = 'hid_auth_user_pass';
 
   // Disable the user login page if disabled.
   $items['user']['page callback'] = 'hid_auth_user_page';
@@ -203,6 +206,19 @@ function hid_auth_user_is_anonymous() {
 }
 
 /**
+ * Access callback function to replace user_register_access(). If logins are not
+ * permitted and the user is not logged in, deny the user access. If the user is
+ * logged in, use the default user_register_access() callback.
+ */
+function hid_auth_user_register_access() {
+  $login_enabled = variable_get('hid_auth_login_enabled', FALSE);
+  if ($login_enabled) {
+    return user_register_access();
+  }
+  return FALSE;
+}
+
+/**
  * Callback function to replace user_page(). If logins are not permitted and
  * the user is not logged in, deny the user access. If the user is logged in,
  * display their user page.
@@ -215,4 +231,18 @@ function hid_auth_user_page() {
     return user_page();
   }
   drupal_access_denied();
+}
+
+/**
+ * Callback function to replace user_pass(). If logins are not permitted and
+ * the user is not logged in, deny the user access.
+ */
+function hid_auth_user_pass($form_id) {
+  $login_enabled = variable_get('hid_auth_login_enabled', FALSE);
+
+  if ($login_enabled) {
+    return drupal_get_form($form_id);
+  }
+  drupal_access_denied();
+
 }
