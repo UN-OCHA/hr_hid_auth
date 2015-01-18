@@ -249,5 +249,90 @@ function hid_auth_user_pass($form_id) {
     return drupal_get_form($form_id);
   }
   drupal_access_denied();
+}
 
+/**
+ * Implements hook_oauthconnector_presets_alter().
+ *
+ * Provides Oauth Connector presets for the production, dev, and local env
+ * configurations for Humanitarian.ID auth integration.
+ */
+function hid_auth_oauthconnector_presets_alter(&$presets) {
+  // Define presets for the production Humanitarian.ID environment.
+  $hid_auth_prod = new stdClass;
+  $hid_auth_prod->name = 'hid_oauth';
+  $hid_auth_prod->title = 'Humanitarian.ID (production)';
+  $hid_auth_prod->url = 'https://auth.humanitarian.id';
+  $hid_auth_prod->consumer_advanced = array(
+    'oauth2' => 1,
+    'signature method' => 'HMAC-SHA1',
+    'authentication realm' => '',
+    'request token endpoint' => '/oauth/request_token',
+    'authorization scope' => 'hid:profile',
+    'authorization endpoint' => '/oauth/authorize',
+    'access token endpoint' => '/oauth/access_token',
+  );
+  $hid_auth_prod->mapping = array(
+    'fields' => array(
+      'uid' => array(
+        'resource' => 'https://auth.humanitarian.id/account.json',
+        'method post' => 0,
+        'field' => 'user_id',
+        'querypath' => FALSE,
+        'sync_with_field' => '',
+      ),
+      'email' => array(
+        'resource' => 'https://auth.humanitarian.id/account.json',
+        'method post' => 0,
+        'field' => 'email',
+        'querypath' => FALSE,
+        'sync_with_field' => 'mail',
+      ),
+      'name' => array(
+        'resource' => 'https://auth.humanitarian.id/account.json',
+        'method post' => 0,
+        'field' => 'email',
+        'querypath' => FALSE,
+        'sync_with_field' => 'name',
+      ),
+      'avatar' => array(
+        'resource' => '',
+        'method post' => 0,
+        'field' => '',
+        'querypath' => FALSE,
+        'sync_with_field' => '',
+      ),
+    ),
+    'format' => 'json',
+  );
+  $presets['hid_auth_prod'] = array(
+    'data' => $hid_auth_prod,
+    'name' => 'Humanitarian.ID (production)',
+  );
+
+  // Define overrides for the dev environment.
+  $hid_auth_dev = clone $hid_auth_prod;
+  $hid_auth_dev->name = 'hid_oauth';
+  $hid_auth_dev->title = 'Humanitarian.ID (dev)';
+  $hid_auth_dev->url = 'http://dev.auth.568elmp02.blackmesh.com';
+  $hid_auth_dev->mapping['fields']['uid']['resource'] = 'http://dev.auth.568elmp02.blackmesh.com/account.json';
+  $hid_auth_dev->mapping['fields']['email']['resource'] = 'http://dev.auth.568elmp02.blackmesh.com/account.json';
+  $hid_auth_dev->mapping['fields']['name']['resource'] = 'http://dev.auth.568elmp02.blackmesh.com/account.json';
+  $presets['hid_auth_dev'] = array(
+    'data' => $hid_auth_dev,
+    'name' => 'Humanitarian.ID (dev)',
+  );
+
+  // Define overrides for the local environment.
+  $hid_auth_local = clone $hid_auth_prod;
+  $hid_auth_local->name = 'hid_oauth';
+  $hid_auth_local->title = 'Humanitarian.ID (local)';
+  $hid_auth_local->url = 'http://auth.contactsid.vm';
+  $hid_auth_local->mapping['fields']['uid']['resource'] = 'http://auth.contactsid.vm/account.json';
+  $hid_auth_local->mapping['fields']['email']['resource'] = 'http://auth.contactsid.vm/account.json';
+  $hid_auth_local->mapping['fields']['name']['resource'] = 'http://auth.contactsid.vm/account.json';
+  $presets['hid_auth_local'] = array(
+    'data' => $hid_auth_local,
+    'name' => 'Humanitarian.ID (local)',
+  );
 }
