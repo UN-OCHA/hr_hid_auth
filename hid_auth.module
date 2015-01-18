@@ -72,6 +72,11 @@ function hid_auth_drupal_goto_alter(&$path, $options, $http_response_code) {
  * authentication server.
  */
 function hid_auth_form_user_profile_form_alter(&$form, &$form_state) {
+  // Only change the standard "account" user page.
+  if (!empty($form['#user_category']) && $form['#user_category'] !== 'account') {
+    return;
+  }
+
   // Check if the user has a Connector module account.
   $uid = !empty($form['#user']->uid) ? $form['#user']->uid : FALSE;
   $authname = $uid ? db_query("SELECT authname FROM {authmap} WHERE module = 'connector' AND uid = :uid", array(':uid' => $uid))->fetchField() : FALSE;
