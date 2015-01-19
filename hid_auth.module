@@ -134,6 +134,34 @@ function hid_auth_get_user_id($account = NULL) {
 }
 
 /**
+ * Helper function to retrieve a signed-in user's account data from the
+ * authentication service.
+ */
+function hid_auth_get_user_data($cid = NULL) {
+  // Get account ID and provider data.
+  if (empty($cid)) {
+    $cid = hid_auth_get_user_id();
+  }
+  $provider = oauthconnector_provider_load('hid_oauth');
+  $token = (!empty($cid) && !empty($provider->csid)) ? oauthconnector_get_connection_token($provider, $cid) : FALSE;
+
+  if (!empty($provider->mapping['fields']['uid']['resource']) && !empty($token->key)) {
+    // Prepare query to get account data.
+    $url = url($provider->mapping['fields']['uid']['resource'], array('query' => array('access_token' => $token->key)));
+    $res = drupal_http_request($url);
+
+    // Handle response
+    if (empty($res->error) && !empty($res->code) && floor(intval($res->code) / 100) == 2 && !empty($res->data)) {
+      return drupal_json_decode($res->data);
+    }
+    else {
+      watchdog('hid_auth', 'Error occurred when attempting to fetch user data. HTTP code %code: @error', array('%code' => $res->code, '@error' => $res->error), WATCHDOG_WARNING);
+    }
+  }
+  return FALSE;
+}
+
+/**
  * Helper function to register a user with a given email address, and optional
  * first and last name.
  */
