@@ -4,8 +4,6 @@
  * Code for the Humanitarian ID Auth Integration feature.
  */
 
-include_once 'hid_auth.features.inc';
-
 /**
  * Implements hook_menu_alter().
  */
@@ -22,7 +20,7 @@ function hid_auth_menu_alter(&$items) {
 }
 
 /**
- * Implements hook_menu()).
+ * Implements hook_menu().
  */
 function hid_auth_menu() {
   $items = array();
