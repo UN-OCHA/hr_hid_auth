@@ -36,6 +36,6 @@ function hid_auth_update_user_name_field() {
     'default' => '',
     'description' => 'Unique user name.',
   );
-  db_drop_index('users', 'name');
+  db_drop_unique_key('users', 'name');
   db_change_field('users', 'name', 'name', $name_field, array('unique keys' => array('name' => array('name'))));
 }
