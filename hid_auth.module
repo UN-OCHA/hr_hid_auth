@@ -61,8 +61,15 @@ function hid_auth_drupal_goto_alter(&$path, $options, $http_response_code) {
     $path = hid_auth_get_base_url() . '/logout?redirect=' . url('<front>', array('absolute' => TRUE));
   }
   // Fixes conflict with language url
-  if (strpos($path, '%2Fen%2Foauth%2Fauthorized2%2F1') !== FALSE) {
-    $path = str_replace('%2Fen%2Foauth%2Fauthorized2%2F1', '%2Foauth%2Fauthorized2%2F1', $path);
+  $oauth_url = '%2Foauth%2Fauthorized2%2F1';
+  if (strpos($path, '%2Fen'.$oauth_url) !== FALSE) {
+    $path = str_replace('%2Fen'.$oauth_url, $oauth_url, $path);
+  }
+  if (strpos($path, '%2Ffr'.$oauth_url) !== FALSE) {
+    $path = str_replace('%2Ffr'.$oauth_url, $oauth_url, $path);
+  }
+  if (strpos($path, '%2Fes'.$oauth_url) !== FALSE) {
+    $path = str_replace('%2Fes'.$oauth_url, $oauth_url, $path);
   }
 }
 
