@@ -60,6 +60,9 @@ function hid_auth_drupal_goto_alter(&$path, $options, $http_response_code) {
   if (!empty($GLOBALS['hid_auth_user_logout'])) {
     $path = hid_auth_get_base_url() . '/logout?redirect=' . url('<front>', array('absolute' => TRUE));
   }
+  if (isset($options['params']) && isset($options['params']['redirect_uri']) && strpos($options['params']['redirect_uri'], 'oauth/authorized2') !== FALSE) {
+    $options['params']['redirect_uri'] = str_replace('en/oauth/authorized2', 'oauth/authorized2', $options['params']['redirect_uri']);
+  }
 }
 
 /**
@@ -361,15 +364,5 @@ function hid_auth_oauthconnector_presets_alter(&$presets) {
     'data' => $hid_auth_local,
     'name' => 'Humanitarian.ID (local)',
   );
-}
-
-/**
- * Implements hook_drupal_goto_alter()
- * Make sure language_url doesn't conflict with the oauth2 redirect_uri
- */
-function hid_auth_drupal_goto_alter(&$path, &$options, &$http_response_code) {
-  if (isset($options['params']) && isset($options['params']['redirect_uri']) && strpos($options['params']['redirect_uri'], 'oauth/authorized2') !== FALSE) {
-    $options['params']['redirect_uri'] = str_replace('en/oauth/authorized2', 'oauth/authorized2', $options['params']['redirect_uri']);
-  }
 }
 
