@@ -60,8 +60,9 @@ function hid_auth_drupal_goto_alter(&$path, $options, $http_response_code) {
   if (!empty($GLOBALS['hid_auth_user_logout'])) {
     $path = hid_auth_get_base_url() . '/logout?redirect=' . url('<front>', array('absolute' => TRUE));
   }
-  if (isset($options['params']) && isset($options['params']['redirect_uri']) && strpos($options['params']['redirect_uri'], 'oauth/authorized2') !== FALSE) {
-    $options['params']['redirect_uri'] = str_replace('en/oauth/authorized2', 'oauth/authorized2', $options['params']['redirect_uri']);
+  // Fixes conflict with language url
+  if (strpos($path, '%2Fen%2Foauth%2Fauthorized2%2F1') !== FALSE) {
+    $path = str_replace('%2Fen%2Foauth%2Fauthorized2%2F1', '%2Foauth%2Fauthorized2%2F1', $path);
   }
 }
 
